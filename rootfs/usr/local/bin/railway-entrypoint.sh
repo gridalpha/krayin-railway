@@ -24,7 +24,7 @@ cd "$APP_DIR"
 # password and one seed for APP_KEY. The public URL comes from the platform,
 # because Krayin bakes APP_URL into every generated link and every Storage::url.
 # ---------------------------------------------------------------------------
-: "${DB_HOST:?DB_HOST is required — reference \${{MySQL.MYSQLHOST}}}"
+: "${DB_HOST:?DB_HOST is required — reference the MySQL service's MYSQLHOST}"
 : "${DB_PASSWORD:?DB_PASSWORD is required — the password of the app's own MySQL role}"
 : "${ADMIN_EMAIL:?ADMIN_EMAIL is required — it becomes the first admin account}"
 : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required — it becomes the first admin password}"
