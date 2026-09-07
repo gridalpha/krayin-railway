@@ -44,10 +44,20 @@ function requireEnv(string $key): string
  * Serialise one .env line. Values are written bare when they cannot be
  * misparsed, and double-quoted otherwise — with `$` escaped, since Dotenv
  * expands ${VAR} inside double quotes and a generated secret can contain one.
+ *
+ * An empty value is written as a bare `KEY=`, never as `KEY=""`. Krayin's
+ * installer reads several keys straight out of the file text rather than
+ * through Dotenv (Installer::getEnvAtRuntime splits the raw line on `=`), so a
+ * quoted empty string reaches it as the two-character value `""` — which as
+ * DB_PREFIX produces tables called `""lead_stages` and fails the install.
  */
 function envLine(string $key, string $value): string
 {
-    if ($value !== '' && preg_match('/\A[A-Za-z0-9_@%+\-.\/:=,\[\]]+\z/', $value) === 1) {
+    if ($value === '') {
+        return $key.'=';
+    }
+
+    if (preg_match('/\A[A-Za-z0-9_@%+\-.\/:=,\[\]]+\z/', $value) === 1) {
         return $key.'='.$value;
     }
 
