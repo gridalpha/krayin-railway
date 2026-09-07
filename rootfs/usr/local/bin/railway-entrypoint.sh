@@ -236,10 +236,22 @@ max_spare=$((max_children / 2))
 [ "$max_spare" -lt "$start_servers" ] && max_spare=$start_servers
 
 pool=/usr/local/etc/php-fpm.d/zz-railway.conf
-sed -i -E "s/^pm.max_children = .*/pm.max_children = ${max_children}/" "$pool"
-sed -i -E "s/^pm.start_servers = .*/pm.start_servers = ${start_servers}/" "$pool"
-sed -i -E "s/^pm.min_spare_servers = .*/pm.min_spare_servers = ${start_servers}/" "$pool"
-sed -i -E "s/^pm.max_spare_servers = .*/pm.max_spare_servers = ${max_spare}/" "$pool"
+sed -i -E "s/^pm\.max_children[[:space:]]*=.*/pm.max_children = ${max_children}/" "$pool"
+sed -i -E "s/^pm\.start_servers[[:space:]]*=.*/pm.start_servers = ${start_servers}/" "$pool"
+sed -i -E "s/^pm\.min_spare_servers[[:space:]]*=.*/pm.min_spare_servers = ${start_servers}/" "$pool"
+sed -i -E "s/^pm\.max_spare_servers[[:space:]]*=.*/pm.max_spare_servers = ${max_spare}/" "$pool"
+
+# php-fpm refuses to start on an inconsistent pool (exit 78), which supervisord
+# then retries into a FATAL state behind a container that still answers 502, so
+# check the substitution landed rather than discovering it in a restart loop.
+for key in max_children start_servers min_spare_servers max_spare_servers; do
+    if ! grep -qE "^pm\.${key} = [0-9]+\$" "$pool"; then
+        log "ERROR: php-fpm pool key pm.${key} was not rewritten"
+        exit 1
+    fi
+done
+
+php-fpm -t
 
 mkdir -p /tmp/nginx-client-body /tmp/nginx-proxy /tmp/nginx-fastcgi /tmp/nginx-uwsgi /tmp/nginx-scgi
 chown -R www-data:www-data /tmp/nginx-client-body /tmp/nginx-proxy /tmp/nginx-fastcgi /tmp/nginx-uwsgi /tmp/nginx-scgi
